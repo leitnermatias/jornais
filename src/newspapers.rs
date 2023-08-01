@@ -123,3 +123,53 @@ pub async fn get_lanacion() -> Vec<JournalNew> {
 
     latest_news
 }
+
+pub async fn get_lacapital() -> Vec<JournalNew> {
+    let first_page_load = reqwest::get("https://www.lacapital.com.ar/secciones/ultimo-momento.html").await;
+    let mut latest_news = vec![];
+
+    match first_page_load {
+        Ok(response) => {
+            let response_html = response.text().await.unwrap();
+
+            let dom = tl::parse(&response_html, tl::ParserOptions::default()).unwrap();
+            let parser = dom.parser();
+
+            let h2_tags = get_elements("h2.entry-title", &dom, parser);
+
+            h2_tags.iter().for_each(|node| {
+                let title = node.inner_text(parser);
+
+                latest_news.push(JournalNew { title: String::from(title), text: String::from("") })
+            })
+        },
+        Err(error) => println!("{}", error)
+    }
+
+    latest_news
+}
+
+pub async fn get_rosario3() -> Vec<JournalNew> {
+    let first_page_load = reqwest::get("https://www.rosario3.com/seccion/ultimas-noticias/").await;
+    let mut latest_news = vec![];
+
+    match first_page_load {
+        Ok(response) => {
+            let response_html = response.text().await.unwrap();
+
+            let dom = tl::parse(&response_html, tl::ParserOptions::default()).unwrap();
+            let parser = dom.parser();
+
+            let h2_tags = get_elements("h2.title", &dom, parser);
+
+            h2_tags.iter().for_each(|node| {
+                let title = node.inner_text(parser);
+
+                latest_news.push(JournalNew { title: String::from(title), text: String::from("") })
+            })
+        },
+        Err(error) => println!("{}", error)
+    }
+
+    latest_news
+}
