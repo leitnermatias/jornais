@@ -91,3 +91,35 @@ pub async fn get_infobae() -> Vec<JournalNew> {
 
     latest_news
 }
+
+pub async fn get_lanacion() -> Vec<JournalNew> {
+    let first_page_load = reqwest::get("https://www.lanacion.com.ar/ultimas-noticias/").await;
+    let mut latest_news = vec![];
+
+    match first_page_load {
+        Ok(response) => {
+            let response_html = response.text().await.unwrap();
+
+            let dom = tl::parse(&response_html, tl::ParserOptions::default()).unwrap();
+            let parser = dom.parser();
+
+            let article_tags = get_elements("article.mod-article", &dom, parser);
+
+            article_tags.iter().for_each(|node| {
+                let article_tag_html = node.inner_html(parser);
+
+                let inner_dom = tl::parse(&article_tag_html, tl::ParserOptions::default()).unwrap();
+                let inner_parser = inner_dom.parser();
+
+                let a_tags = get_elements("a.com-link", &inner_dom, inner_parser);
+
+                let title = a_tags.first().expect("a tag should exist inside article").inner_text(inner_parser);
+
+                latest_news.push(JournalNew { title: String::from(title), text: String::from("") });
+            })
+        },
+        Err(error) => println!("{}", error)
+    }
+
+    latest_news
+}

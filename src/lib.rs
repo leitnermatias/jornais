@@ -19,4 +19,10 @@ mod tests {
 
         assert!(!news.is_empty())
     }
+
+    #[tokio::test]
+    async fn newspaper_lanacion() {
+        let news = newspapers::get_lanacion().await;
+        assert!(!news.is_empty())
+    }
 }
