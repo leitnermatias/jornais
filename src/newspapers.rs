@@ -54,5 +54,40 @@ pub async fn get_clarin() -> Vec<JournalNew> {
         },
         Err(error) => println!("{}", error)
     }
+
+    latest_news
+}
+
+pub async fn get_infobae() -> Vec<JournalNew> {
+    let first_page_load = reqwest::get("https://www.infobae.com/ultimas-noticias-america/").await;
+    let mut latest_news: Vec<JournalNew> = vec![];
+
+    match first_page_load {
+        Ok(response) => {
+            let response_html = response.text().await.unwrap();
+
+            let dom = tl::parse(&response_html, tl::ParserOptions::default()).unwrap();
+            let parser = dom.parser();
+
+            let a_tags = get_elements("a.feed-list-card", &dom, parser);
+
+            a_tags.iter().for_each(|node| {
+                let a_tag_html = node.inner_html(parser);
+
+                let inner_dom = tl::parse(&a_tag_html, tl::ParserOptions::default()).unwrap();
+                let inner_parser = inner_dom.parser();
+
+                let h2 = get_elements("h2.feed-list-card-headline-lean", &inner_dom, inner_parser);
+                let div = get_elements("div.deck", &inner_dom, inner_parser);
+
+                let title = h2.first().expect("h2 should exist inside a tag").inner_text(inner_parser);
+                let text = div.first().expect("div should exist inside a tag").inner_text(inner_parser);
+
+                latest_news.push(JournalNew { title: String::from(title) , text: String::from(text) })
+            })
+        },
+        Err(error) => println!("{}", error)
+    } 
+
     latest_news
 }

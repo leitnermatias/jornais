@@ -12,4 +12,11 @@ mod tests {
 
         assert!(!news.is_empty())
     }
+
+    #[tokio::test]
+    async fn newspaper_infobae() {
+        let news = newspapers::get_infobae().await;
+
+        assert!(!news.is_empty())
+    }
 }
