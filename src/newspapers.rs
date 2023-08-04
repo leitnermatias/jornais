@@ -81,7 +81,6 @@ pub async fn get_infobae() -> Vec<JournalNew> {
                 let div = get_elements("div.deck", &inner_dom, inner_parser);
 
                 let title = h2.first().expect("h2 should exist inside a tag").inner_text(inner_parser);
-                println!("{}", title);
 
                 let mut journal_new = JournalNew {
                     title: String::from(title),
