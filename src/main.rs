@@ -64,8 +64,6 @@ async fn save_news_to_database(pool: &Pool<MySql>, news: JournalNew, newspaper_n
                     Ok(_) => println!("{}", "[ Saved a new title ]".green()),
                     Err(e) => println!("{}", e)
                 };
-            } else {
-                println!("{}", "[ Skipping already existing title ]".blue())
             }
         },
         Err(error) => println!("{}", error)
@@ -124,7 +122,9 @@ async fn main() {
     };
 
     let _ = task::spawn(async move {
-        let mut interval = time::interval(Duration::from_secs(5));
+        // Will execute every 20 minutes
+        let mut interval = time::interval(Duration::from_secs(60 * 20));
+        println!("{}", "[ Starting to look for new titles ]".bright_blue());
 
         loop {
             interval.tick().await;
