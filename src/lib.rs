@@ -12,8 +12,14 @@ mod tests {
 
         assert!(!news.is_empty());
 
+        let mut titles: Vec<String> = vec![];
+
         news.iter().for_each(|journal_new| {
-            assert!(!journal_new.title.is_empty())
+            assert!(!journal_new.title.is_empty());
+
+            assert!(!titles.contains(&journal_new.title));
+
+            titles.push(journal_new.title.clone());
         })
     }
 
@@ -23,8 +29,14 @@ mod tests {
 
         assert!(!news.is_empty());
 
+        let mut titles: Vec<String> = vec![];
+
         news.iter().for_each(|journal_new| {
-            assert!(!journal_new.title.is_empty())
+            assert!(!journal_new.title.is_empty());
+
+            assert!(!titles.contains(&journal_new.title));
+
+            titles.push(journal_new.title.clone());
         })
     }
 
@@ -34,8 +46,14 @@ mod tests {
 
         assert!(!news.is_empty());
 
+        let mut titles: Vec<String> = vec![];
+
         news.iter().for_each(|journal_new| {
-            assert!(!journal_new.title.is_empty())
+            assert!(!journal_new.title.is_empty());
+
+            assert!(!titles.contains(&journal_new.title));
+
+            titles.push(journal_new.title.clone());
         })
     }
 
@@ -45,8 +63,14 @@ mod tests {
 
         assert!(!news.is_empty());
 
+        let mut titles: Vec<String> = vec![];
+
         news.iter().for_each(|journal_new| {
-            assert!(!journal_new.title.is_empty())
+            assert!(!journal_new.title.is_empty());
+
+            assert!(!titles.contains(&journal_new.title));
+
+            titles.push(journal_new.title.clone());
         })
     }
 
@@ -56,8 +80,14 @@ mod tests {
 
         assert!(!news.is_empty());
 
+        let mut titles: Vec<String> = vec![];
+
         news.iter().for_each(|journal_new| {
-            assert!(!journal_new.title.is_empty())
+            assert!(!journal_new.title.is_empty());
+
+            assert!(!titles.contains(&journal_new.title));
+
+            titles.push(journal_new.title.clone());
         })
     }
 }
