@@ -46,6 +46,10 @@ pub async fn get_clarin() -> Vec<JournalNew> {
                 let h2 = h2s.first().expect("h2 tag should exist inside article tag");
                 let h3 = h3s.first().expect("h3 tag should exist inside article tag");
 
+                if latest_news.iter().any(|journal_new| journal_new.title == h2.inner_text(inner_parser)) {
+                    return
+                }
+
                 latest_news.push(JournalNew { title: String::from(h2.inner_text(inner_parser)), text: String::from(h3.inner_text(inner_parser)) });
 
             });
@@ -82,6 +86,10 @@ pub async fn get_infobae() -> Vec<JournalNew> {
 
                 let title = h2.first().expect("h2 should exist inside a tag").inner_text(inner_parser);
 
+                if latest_news.iter().any(|journal_new| journal_new.title == title) {
+                    return
+                }
+
                 let mut journal_new = JournalNew {
                     title: String::from(title),
                     text: String::from("")
@@ -103,7 +111,7 @@ pub async fn get_infobae() -> Vec<JournalNew> {
 
 pub async fn get_lanacion() -> Vec<JournalNew> {
     let first_page_load = reqwest::get("https://www.lanacion.com.ar/ultimas-noticias/").await;
-    let mut latest_news = vec![];
+    let mut latest_news: Vec<JournalNew> = vec![];
 
     match first_page_load {
         Ok(response) => {
@@ -124,6 +132,10 @@ pub async fn get_lanacion() -> Vec<JournalNew> {
 
                 let title = a_tags.first().expect("a tag should exist inside article").inner_text(inner_parser);
 
+                if latest_news.iter().any(|journal_new| journal_new.title == title) {
+                    return
+                }
+
                 latest_news.push(JournalNew { title: String::from(title), text: String::from("") });
             })
         },
@@ -135,7 +147,7 @@ pub async fn get_lanacion() -> Vec<JournalNew> {
 
 pub async fn get_lacapital() -> Vec<JournalNew> {
     let first_page_load = reqwest::get("https://www.lacapital.com.ar/secciones/ultimo-momento.html").await;
-    let mut latest_news = vec![];
+    let mut latest_news: Vec<JournalNew> = vec![];
 
     match first_page_load {
         Ok(response) => {
@@ -149,6 +161,10 @@ pub async fn get_lacapital() -> Vec<JournalNew> {
             h2_tags.iter().for_each(|node| {
                 let title = node.inner_text(parser);
 
+                if latest_news.iter().any(|journal_new| journal_new.title == title) {
+                    return
+                }
+
                 latest_news.push(JournalNew { title: String::from(title), text: String::from("") })
             })
         },
@@ -160,7 +176,7 @@ pub async fn get_lacapital() -> Vec<JournalNew> {
 
 pub async fn get_rosario3() -> Vec<JournalNew> {
     let first_page_load = reqwest::get("https://www.rosario3.com/seccion/ultimas-noticias/").await;
-    let mut latest_news = vec![];
+    let mut latest_news: Vec<JournalNew> = vec![];
 
     match first_page_load {
         Ok(response) => {
@@ -173,6 +189,10 @@ pub async fn get_rosario3() -> Vec<JournalNew> {
 
             h2_tags.iter().for_each(|node| {
                 let title = node.inner_text(parser);
+
+                if latest_news.iter().any(|journal_new| journal_new.title == title) {
+                    return
+                }
 
                 latest_news.push(JournalNew { title: String::from(title), text: String::from("") })
             })
