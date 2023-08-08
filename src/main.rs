@@ -1,5 +1,5 @@
 use colored::Colorize;
-use jornais::{newspapers, model::JournalNew};
+use jornais::{newspapers, model::{JournalNew, DBInfo}};
 use tokio::{task, time};
 use std::{io::{self, Write}, time::Duration};
 use sqlx::{mysql::MySqlPoolOptions, Pool, MySql, Row};
@@ -75,10 +75,48 @@ async fn save_news_to_database(pool: &Pool<MySql>, news: JournalNew, newspaper_n
 #[tokio::main]
 async fn main() {
 
-    let db_user = menu("Enter your MySQL username", &[]);
-    let db_password = menu("Enter your MySQL password", &[]);
-    let db_name = menu("Enter the name of the database you want to use", &[]);
-    let db_port = menu("Enter the port where the database server is running", &[]);
+    let mut load_file = false;
+    let db_info_fp = std::path::Path::new("db_conn.json");
+
+    if db_info_fp.exists() {
+        let user_load = menu("There are database connection settings saved, do you want to load them?", &["Yes", "No"]);
+
+        if user_load.as_str() == "0" {
+            println!("{}", "[ Loading information to connect to database from file ]".green());
+            load_file = true;
+        }
+    }
+
+
+    let mut db_info = DBInfo {
+        user: String::from(""),
+        password: String::from(""),
+        name: String::from(""),
+        port: String::from("")
+    };
+
+    if !load_file {
+        db_info.user = menu("Enter your MySQL username", &[]);
+        db_info.password = menu("Enter your MySQL password", &[]);
+        db_info.name = menu("Enter the name of the database you want to use", &[]);
+        db_info.port = menu("Enter the port where the database server is running", &[]);
+
+        let save_to_file = menu("Do you want to save these connection settings to a file? (This will remove previously saved settings)", &["Yes", "No"]);
+
+        if save_to_file.as_str() == "0" {
+            let mut file = match std::fs::File::create("db_conn.json") {
+                Ok(f) => f,
+                Err(_) => panic!("Error trying to retrieve db_conn.json file")
+            };
+        
+            serde_json::to_writer_pretty(&mut file, &db_info).expect("Error trying to save database info");
+        }
+    } else {
+        let data = std::fs::read_to_string(db_info_fp).expect("Error retrieving file contents of db_conn.json");
+
+        db_info = serde_json::from_str(&data).expect("Error parsing db_conn.json");
+    }
+    
 
     println!("
         {}
@@ -88,15 +126,21 @@ async fn main() {
         [Port]     {}    
     ",
         "[ Using the following variables to connect to the database on localhost ]".blue(), 
-        db_user.green(), 
-        db_password.green(), 
-        db_name.green(), 
-        db_port.green()
+        db_info.user.green(), 
+        db_info.password.green(), 
+        db_info.name.green(), 
+        db_info.port.green()
     );
 
     let pool = match MySqlPoolOptions::new()
     .max_connections(2)
-    .connect(format!("mysql://{db_user}:{db_password}@localhost:{db_port}/{db_name}").as_str()).await {
+    .connect(format!(
+        "mysql://{}:{}@localhost:{}/{}",
+        db_info.user,
+        db_info.password,
+        db_info.port,
+        db_info.name
+    ).as_str()).await {
         Ok(pool) => pool,
         Err(error) => panic!("
         Error connecting to database: 
@@ -106,6 +150,13 @@ async fn main() {
     };
 
     println!("{}", "[ Creating table to save news ]".bright_green());
+
+    match sqlx::query(
+        "CALL sys.table_exists(?, 'newspapers', @exists); SELECT @exists"
+    ).bind(db_info.name).execute(&pool).await {
+        Ok(exists) => println!("EXISTS {:?}", exists),
+        Err(error) => println!("ERROR {}", error)
+    }
 
     match sqlx::query(
         "CREATE TABLE IF NOT EXISTS news (
