@@ -191,16 +191,19 @@ pub async fn get_rosario3() -> Vec<JournalNew> {
             let dom = tl::parse(&response_html, tl::ParserOptions::default()).unwrap();
             let parser = dom.parser();
 
-            let h2_tags = get_elements("h2.title", &dom, parser);
+            let a_tags = get_elements("a.cover-link", &dom, parser);
 
-            h2_tags.iter().for_each(|node| {
-                let title = node.inner_text(parser);
+            a_tags.iter().for_each(|node| {
+
+                let link = node.as_tag().expect("Failed to convert to HTML tag").attributes().get("href").expect("Failed to get href for a tag").unwrap().as_utf8_str();
+                let title = node.as_tag().expect("Failed to convert to HTML tag").attributes().get("title").expect("Failed to get title for a tag").unwrap().as_utf8_str();
+
 
                 if latest_news.iter().any(|journal_new| journal_new.title == title) {
                     return
                 }
 
-                latest_news.push(JournalNew { title: String::from(title), text: String::from(""), link: None })
+                latest_news.push(JournalNew { title: String::from(title), text: String::from(""), link: Some(format!("http://rosario3.com{}", String::from(link))) })
             })
         },
         Err(error) => println!("{}", error)
