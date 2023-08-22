@@ -273,8 +273,8 @@ async fn main() {
                         display: flex;
                         flex-direction: column;
                         align-items: center;
-                        background-color: rgba(109, 58, 0, 0.74);
-                        color: rgb(7, 7, 7);
+                        background-color: rgba(44, 74, 83, 0.74);
+                        color: rgb(0, 0, 0);
                         text-align: center;
                     }
 
@@ -283,10 +283,10 @@ async fn main() {
                         flex-direction: column;
                         align-items: center;
                         width: 75%;
-                        background-color: rgba(136, 100, 45, 0.5);
+                        background-color: rgba(196, 188, 177, 0.288);
                         padding: 10px;
                         border-radius: 5px;
-                        box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.411);
+                        border: 2px solid rgba(247, 203, 121, 0.363);
                         margin-bottom: 10px;
                     }
 
@@ -300,7 +300,7 @@ async fn main() {
                     }
 
                     h1 {
-                        color: rgb(172, 155, 2);
+                        color: rgb(0, 0, 0);
                     }
 
                     .hideButton {
@@ -314,7 +314,7 @@ async fn main() {
 
                     a {
                         text-decoration: none;
-                        color: rgb(245, 182, 46);
+                        color: rgb(2, 51, 92);
                     }
 
                     a:hover {
