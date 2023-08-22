@@ -28,7 +28,7 @@ fn menu(title: &str, options: &[&str]) -> String {
 
 }
 
-fn print_news(title: &str, news: Vec<JournalNew>) {
+fn _print_news(title: &str, news: Vec<JournalNew>) {
     println!("{}", title.green());
     let separator = "----------------".bright_white();
 
@@ -69,6 +69,30 @@ async fn save_news_to_database(pool: &Pool<MySql>, news: JournalNew, newspaper_n
         Err(error) => println!("{}", error)
     };
 
+
+}
+
+fn format_news_to_html(title: String, journal_news: Vec<JournalNew>) -> String {
+
+    let mut news_html = String::from(format!(r#"
+        <h1>{title}</h1>
+    "#));
+
+    for news in journal_news {
+        let formatted = format!(r#"
+        <div class="news">
+            <button class="hideButton">v</button>
+            <h3>{}</h3>
+            <b>{}</b>
+        </div>
+        "#,
+        news.title,
+        news.text);
+
+        news_html += formatted.as_str();
+    }
+
+    news_html
 
 }
 
@@ -235,8 +259,107 @@ async fn main() {
                     newspapers::get_rosario3()
                 );
 
-                print_news("CLARIN", clarin_news);
-                print_news("ROSARIO3", rosario3_news);
+                
+                let clarin_html = format_news_to_html(String::from("Clarin"), clarin_news);
+                let rosario3_html = format_news_to_html(String::from("Rosario3"), rosario3_news);
+
+                let styles = r#"
+                <style>
+                    body {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        background-color: rgba(109, 58, 0, 0.74);
+                        color: rgb(7, 7, 7);
+                        text-align: center;
+                    }
+
+                    .news {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        width: 75%;
+                        background-color: rgba(136, 100, 45, 0.5);
+                        padding: 10px;
+                        border-radius: 5px;
+                        box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.411);
+                        margin-bottom: 10px;
+                    }
+
+                    .news > b {
+                        font-size: 12px;
+                        text-align: justify;
+                    }
+                    
+                    h3 {
+                        font-size: 24px;
+                    }
+
+                    h1 {
+                        color: rgb(172, 155, 2);
+                    }
+
+                    .hideButton {
+                        align-self: flex-start;
+                        font-size: 16px;
+                        background-color: rgba(255, 191, 52, 0.699);
+                        border: none;
+                        border-radius: 5px;
+                        padding: 5px 10px
+                    }
+                    
+                </style>
+                "#;
+
+                let script = r#"
+                <script defer>
+                    const $ = (selector, searchIn) => searchIn ? searchIn.querySelectorAll(selector) : document.querySelectorAll(selector)
+                    const $1 = (selector, searchIn) => searchIn ? searchIn.querySelector(selector) : document.querySelector(selector)
+                    
+                    window.onload = function() {
+                        const hideButtons = $(".hideButton")
+
+                        hideButtons.forEach(button => {
+                            button.hiding = false
+                            
+                            button.addEventListener('click', () => {
+                                const parent = button.parentNode
+
+                                button.hiding = !button.hiding
+                                button.innerText = button.hiding ? '>' : "v"
+
+                                const title = $1("h3", parent)
+                                const text = $1("b", parent)
+
+                                title.style.display = button.hiding ? 'none' : 'block'
+                                text.style.display = button.hiding ? 'none' : 'block'
+                            })
+                        })
+                    }
+
+
+                </script>
+                "#;
+                
+                let html_template = format!(r#"
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Noticias</title>
+                    {styles}
+                    {script}
+                </head>
+                <body>
+                    {clarin_html}
+                    <hr>
+                    {rosario3_html}
+                </body>
+                </html>
+                "#);
+
+                std::fs::write("jornais.html", html_template).expect("Error writing HTML file");
             }
         }).await;
     }

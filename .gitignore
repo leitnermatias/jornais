@@ -1,3 +1,4 @@
 /target
 docker-compose.yml
 db_conn.json
+*.html
