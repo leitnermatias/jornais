@@ -13,3 +13,4 @@ colored = "2.0.4"
 sqlx = { version = "0.7", features = [ "runtime-tokio", "mysql", "macros", "chrono" ] }
 serde = "1.0.183"
 serde_json = "1.0.104"
+chrono = "0.4.26"

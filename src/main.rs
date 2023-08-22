@@ -1,3 +1,4 @@
+use chrono::Timelike;
 use colored::Colorize;
 use jornais::{newspapers, model::{JournalNew, DBInfo}};
 use tokio::{task, time};
@@ -248,11 +249,11 @@ async fn main() {
             }
         }).await;
     } else {
+        print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
         let _ = task::spawn(async move {
             let mut interval = time::interval(Duration::from_secs(60 * 10));
     
             loop {
-                println!("Looking for new titles");
                 interval.tick().await;
     
                 let (
@@ -365,13 +366,17 @@ async fn main() {
                     {script}
                 </head>
                 <body>
-                    {clarin_html}
-                    <hr>
                     {rosario3_html}
+                    {clarin_html}
                 </body>
                 </html>
                 "#);
 
+
+                let now = chrono::offset::Local::now();
+
+                let timestamp = format!("{}:{}:{}", now.hour(), now.minute(), now.second());
+                println!("{}{}", timestamp.on_green(), "[ UPDATING HTML FILE ]".green());
                 std::fs::write("jornais.html", html_template).expect("Error writing HTML file");
             }
         }).await;
