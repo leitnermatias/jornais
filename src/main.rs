@@ -82,12 +82,16 @@ fn format_news_to_html(title: String, journal_news: Vec<JournalNew>) -> String {
         let formatted = format!(r#"
         <div class="news">
             <button class="hideButton">v</button>
-            <h3>{}</h3>
+            <a target="_blank" href="{}">
+                <h3>{}</h3>
+            </a>
             <b>{}</b>
         </div>
         "#,
+        news.link.unwrap_or(String::from("")),
         news.title,
-        news.text);
+        news.text,
+        );
 
         news_html += formatted.as_str();
     }
@@ -306,6 +310,15 @@ async fn main() {
                         border: none;
                         border-radius: 5px;
                         padding: 5px 10px
+                    }
+
+                    a {
+                        text-decoration: none;
+                        color: rgb(245, 182, 46);
+                    }
+
+                    a:hover {
+                        text-decoration: underline;
                     }
                     
                 </style>

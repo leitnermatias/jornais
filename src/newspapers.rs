@@ -42,15 +42,20 @@ pub async fn get_clarin() -> Vec<JournalNew> {
 
                 let h2s = get_elements("h2", &inner_dom, inner_parser);
                 let h3s = get_elements("h3.summary", &inner_dom, inner_parser);
+                let a_tags = get_elements("a.link-new", &inner_dom, inner_parser);
 
                 let h2 = h2s.first().expect("h2 tag should exist inside article tag");
                 let h3 = h3s.first().expect("h3 tag should exist inside article tag");
+                let a = a_tags.first().expect("a tag should exist inside article tag");
 
                 if latest_news.iter().any(|journal_new| journal_new.title == h2.inner_text(inner_parser)) {
                     return
                 }
+                
+                let link = a.as_tag().expect("Failed to convert to HTML tag").attributes().get("href").expect("Failed to get href for a tag").unwrap().as_utf8_str();
 
-                latest_news.push(JournalNew { title: String::from(h2.inner_text(inner_parser)), text: String::from(h3.inner_text(inner_parser)) });
+
+                latest_news.push(JournalNew { title: String::from(h2.inner_text(inner_parser)), text: String::from(h3.inner_text(inner_parser)), link: Some(String::from(link))});
 
             });
 
@@ -92,7 +97,8 @@ pub async fn get_infobae() -> Vec<JournalNew> {
 
                 let mut journal_new = JournalNew {
                     title: String::from(title),
-                    text: String::from("")
+                    text: String::from(""),
+                    link: None
                 };
 
                 if div.first().is_some() {
@@ -136,7 +142,7 @@ pub async fn get_lanacion() -> Vec<JournalNew> {
                     return
                 }
 
-                latest_news.push(JournalNew { title: String::from(title), text: String::from("") });
+                latest_news.push(JournalNew { title: String::from(title), text: String::from(""), link: None });
             })
         },
         Err(error) => println!("{}", error)
@@ -165,7 +171,7 @@ pub async fn get_lacapital() -> Vec<JournalNew> {
                     return
                 }
 
-                latest_news.push(JournalNew { title: String::from(title), text: String::from("") })
+                latest_news.push(JournalNew { title: String::from(title), text: String::from(""), link: None })
             })
         },
         Err(error) => println!("{}", error)
@@ -194,7 +200,7 @@ pub async fn get_rosario3() -> Vec<JournalNew> {
                     return
                 }
 
-                latest_news.push(JournalNew { title: String::from(title), text: String::from("") })
+                latest_news.push(JournalNew { title: String::from(title), text: String::from(""), link: None })
             })
         },
         Err(error) => println!("{}", error)
