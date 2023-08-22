@@ -395,10 +395,10 @@ async fn main() {
 
                 let now = chrono::offset::Local::now();
 
-                let timestamp = format!("{}", now.format("%d-%m-%Y %H:%M"));
+                let timestamp = format!("[ {} ]", now.format("%d-%m-%Y %H:%M"));
                 let added = format!("[ {} news added ]", ammount_news.to_string());
-                println!("{} {}\n    {}\n", timestamp.on_green(), added.on_blue(), "[ UPDATING HTML FILE ]".on_bright_green());
                 std::fs::write("jornais.html", html_template).expect("Error writing HTML file");
+                println!("{} {}\n        {}\n", timestamp.on_green().black(), added.on_blue().black(), "[ HTML FILE UPDATED ]".on_bright_green().black());
             }
         }).await;
     }
