@@ -1,4 +1,3 @@
-use chrono::Timelike;
 use colored::Colorize;
 use jornais::{newspapers, model::{JournalNew, DBInfo}};
 use tokio::{task, time};
@@ -249,10 +248,11 @@ async fn main() {
             }
         }).await;
     } else {
-        print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+        print!("{esc}[2J{esc}[1;1H", esc = 27 as char); // Clear the screen
         let _ = task::spawn(async move {
-            let mut interval = time::interval(Duration::from_secs(60 * 10));
-    
+            let mut interval = time::interval(Duration::from_secs(60 * 5));
+            let mut clarin_latest: Vec<JournalNew> = vec![];
+            let mut rosario3_latest: Vec<JournalNew> = vec![];
             loop {
                 interval.tick().await;
     
@@ -263,7 +263,27 @@ async fn main() {
                     newspapers::get_clarin(),
                     newspapers::get_rosario3()
                 );
+                
+                let mut ammount_news = 0;
+                if clarin_latest.len() == 0 && rosario3_latest.len() == 0 {
+                    clarin_latest = clarin_news.clone();
+                    rosario3_latest = rosario3_news.clone();
+                    ammount_news = clarin_news.len() + rosario3_news.len();
+                } else {
+                    clarin_news.iter().for_each(|news| {
+                        if !clarin_latest.contains(news) {
+                            ammount_news += 1;
+                        }
+                    });
+    
+                    rosario3_news.iter().for_each(|news| {
+                        if !rosario3_latest.contains(news) {
+                            ammount_news += 1;
+                        }
+                    });
+                }
 
+                
                 
                 let clarin_html = format_news_to_html(String::from("Clarin"), clarin_news);
                 let rosario3_html = format_news_to_html(String::from("Rosario3"), rosario3_news);
@@ -375,8 +395,9 @@ async fn main() {
 
                 let now = chrono::offset::Local::now();
 
-                let timestamp = format!("{}:{}:{}", now.hour(), now.minute(), now.second());
-                println!("{}{}", timestamp.on_green(), "[ UPDATING HTML FILE ]".green());
+                let timestamp = format!("{}", now.format("%d-%m-%Y %H:%M"));
+                let added = format!("[ {} news added ]", ammount_news.to_string());
+                println!("{} {}\n    {}\n", timestamp.on_green(), added.on_blue(), "[ UPDATING HTML FILE ]".on_bright_green());
                 std::fs::write("jornais.html", html_template).expect("Error writing HTML file");
             }
         }).await;
