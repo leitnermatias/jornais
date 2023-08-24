@@ -80,7 +80,7 @@ fn format_news_to_html(title: String, journal_news: Vec<JournalNew>) -> String {
 
     for news in journal_news {
         let formatted = format!(r#"
-        <div class="news">
+        <div class="news {}">
             <button class="hideButton">v</button>
             <a target="_blank" href="{}">
                 <h3>{}</h3>
@@ -88,6 +88,7 @@ fn format_news_to_html(title: String, journal_news: Vec<JournalNew>) -> String {
             <b>{}</b>
         </div>
         "#,
+        news.newspaper,
         news.link.unwrap_or(String::from("")),
         news.title,
         news.text,
@@ -251,42 +252,30 @@ async fn main() {
         print!("{esc}[2J{esc}[1;1H", esc = 27 as char); // Clear the screen
         let _ = task::spawn(async move {
             let mut interval = time::interval(Duration::from_secs(60 * 5));
-            let mut clarin_latest: Vec<JournalNew> = vec![];
-            let mut rosario3_latest: Vec<JournalNew> = vec![];
             loop {
                 interval.tick().await;
     
                 let (
                     clarin_news,
-                    rosario3_news
+                    rosario3_news,
+                    infobae_news,
+                    lacapital_news,
+                    lanacion_news
                 ) = tokio::join!(
                     newspapers::get_clarin(),
-                    newspapers::get_rosario3()
+                    newspapers::get_rosario3(),
+                    newspapers::get_infobae(),
+                    newspapers::get_lacapital(),
+                    newspapers::get_lanacion()
                 );
-                
-                let mut ammount_news = 0;
-                if clarin_latest.len() == 0 && rosario3_latest.len() == 0 {
-                    clarin_latest = clarin_news.clone();
-                    rosario3_latest = rosario3_news.clone();
-                    ammount_news = clarin_news.len() + rosario3_news.len();
-                } else {
-                    clarin_news.iter().for_each(|news| {
-                        if !clarin_latest.contains(news) {
-                            ammount_news += 1;
-                        }
-                    });
-    
-                    rosario3_news.iter().for_each(|news| {
-                        if !rosario3_latest.contains(news) {
-                            ammount_news += 1;
-                        }
-                    });
-                }
 
                 
                 
                 let clarin_html = format_news_to_html(String::from("Clarin"), clarin_news);
                 let rosario3_html = format_news_to_html(String::from("Rosario3"), rosario3_news);
+                let infobae_html = format_news_to_html(String::from("Infobae"), infobae_news);
+                let lacapital_html = format_news_to_html(String::from("La Capital"), lacapital_news);
+                let lanacion_html = format_news_to_html(String::from("La Nacion"), lanacion_news);
 
                 let styles = r#"
                 <style>
@@ -341,6 +330,15 @@ async fn main() {
                     a:hover {
                         text-decoration: underline;
                     }
+
+                    #counters {
+                        display: flex;
+                        gap: 15px;
+                        font-size: 15px;
+                        background-color: rgba(196, 188, 177, 0.288);
+                        border-radius: 5px;
+                        padding: 10px
+                    }
                     
                 </style>
                 "#;
@@ -369,6 +367,32 @@ async fn main() {
                                 text.style.display = button.hiding ? 'none' : 'block'
                             })
                         })
+
+                        const rosario3Counter = $1(".rosario3Counter")
+                        const clarinCounter = $1(".clarinCounter")
+                        const infobaeCounter = $1(".infobaeCounter")
+                        const lanacionCounter = $1(".lanacionCounter")
+                        const lacapitalCounter = $1(".lacapitalCounter")
+
+                        let counters = {
+                            rosario3: 0,
+                            clarin: 0,
+                            infobae: 0,
+                            lanacion: 0,
+                            lacapital: 0
+                        }
+
+                        $(".news").forEach(news => {
+                            const newspaper = news.className.split(" ")[1]
+                            counters[newspaper] += 1
+                        })
+
+                        rosario3Counter.innerText = counters.rosario3.toString()
+                        clarinCounter.innerText = counters.clarin.toString()
+                        infobaeCounter.innerText = counters.infobae.toString()
+                        lanacionCounter.innerText = counters.lanacion.toString()
+                        lacapitalCounter.innerText = counters.lacapital.toString()
+
                     }
 
 
@@ -386,8 +410,18 @@ async fn main() {
                     {script}
                 </head>
                 <body>
+                    <div id="counters">
+                        <span>Rosario3: <span class="rosario3Counter">0</span> noticias</span>-
+                        <span>Clarin: <span class="clarinCounter">0</span> noticias</span>-
+                        <span>Infobae: <span class="infobaeCounter">0</span> noticias</span>-
+                        <span>La Nacion: <span class="lanacionCounter">0</span> noticias</span>-
+                        <span>La Capital: <span class="lacapitalCounter">0</span> noticias</span>
+                    </div>
                     {rosario3_html}
                     {clarin_html}
+                    {infobae_html}
+                    {lanacion_html}
+                    {lacapital_html}
                 </body>
                 </html>
                 "#);
@@ -396,9 +430,8 @@ async fn main() {
                 let now = chrono::offset::Local::now();
 
                 let timestamp = format!("[ {} ]", now.format("%d-%m-%Y %H:%M"));
-                let added = format!("[ {} news added ]", ammount_news.to_string());
                 std::fs::write("jornais.html", html_template).expect("Error writing HTML file");
-                println!("{} {}\n        {}\n", timestamp.on_green().black(), added.on_blue().black(), "[ HTML FILE UPDATED ]".on_bright_green().black());
+                println!("{} {}\n", timestamp.on_green().black(), "[ HTML FILE UPDATED ]".on_bright_green().black());
             }
         }).await;
     }

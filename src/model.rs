@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -7,6 +9,18 @@ pub enum Newspaper {
     ROSARIO3,
     INFOBAE,
     LACAPITAL
+}
+
+impl Display for Newspaper {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::CLARIN => write!(f, "clarin"),
+            Self::LANACION => write!(f, "lanacion"),
+            Self::ROSARIO3 => write!(f, "rosario3"),
+            Self::INFOBAE => write!(f, "infobae"),
+            Self::LACAPITAL => write!(f, "lacapital")
+        }
+    }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone)]
