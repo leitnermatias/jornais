@@ -1,4 +1,4 @@
-use tl::{VDom, Node, Parser};
+use tl::{VDom, Node, Parser, HTMLTag};
 
 use crate::model::JournalNew;
 
@@ -18,6 +18,18 @@ fn get_elements<'a>(selector: &str, dom: &VDom<'a>, parser: &Parser<'a>) -> Vec<
     result
 }
 
+fn query_node<'a>(selector: &str, node_tag: &HTMLTag, parser: &Parser<'a>) -> Node<'a> {
+    let select = node_tag.query_selector(parser, selector).expect("h2 should exist inside article").next().unwrap();
+
+    select.get(parser).unwrap().clone()
+
+}
+
+fn get_attribute(attribute: &str, node: &Node) -> String {
+    let node_tag = node.as_tag().unwrap();
+    String::from(node_tag.attributes().get(attribute).expect("Failed to get attribute for a tag").unwrap().as_utf8_str())
+}
+
 pub async fn get_clarin() -> Vec<JournalNew> {
     let first_page_load = reqwest::get("https://www.clarin.com/ultimo-momento/").await;
     let mut latest_news: Vec<JournalNew> = vec![];
@@ -28,34 +40,21 @@ pub async fn get_clarin() -> Vec<JournalNew> {
 
             let dom = tl::parse(&response_html, tl::ParserOptions::default()).unwrap();
             let parser = dom.parser();
-            let articles = dom.query_selector("article")
-            .expect("article tag should exist inside clarin page");
+            let articles = get_elements("article", &dom, parser);
 
-            articles.for_each(|article| {
-                let node_elem = article.get(parser).expect("parser should be able to get article tag");
+            articles.iter().for_each(|node| {
+                let node_tag = node.as_tag().unwrap();
 
-                let inner_html = node_elem.inner_html(parser);
+                let h2 = query_node("h2", node_tag, parser);
+                let h3 = query_node("h3.summary", node_tag, parser);
+                let a = query_node("a.link-new", node_tag, parser);
+                let link = get_attribute("href", &a);
 
-                let inner_dom = tl::parse(&inner_html,tl::ParserOptions::default()).unwrap();
-                
-                let inner_parser = inner_dom.parser();
-
-                let h2s = get_elements("h2", &inner_dom, inner_parser);
-                let h3s = get_elements("h3.summary", &inner_dom, inner_parser);
-                let a_tags = get_elements("a.link-new", &inner_dom, inner_parser);
-
-                let h2 = h2s.first().expect("h2 tag should exist inside article tag");
-                let h3 = h3s.first().expect("h3 tag should exist inside article tag");
-                let a = a_tags.first().expect("a tag should exist inside article tag");
-
-                if latest_news.iter().any(|journal_new| journal_new.title == h2.inner_text(inner_parser)) {
+                if latest_news.iter().any(|journal_new| journal_new.link == Some(String::from(link.clone()))) {
                     return
                 }
                 
-                let link = a.as_tag().expect("Failed to convert to HTML tag").attributes().get("href").expect("Failed to get href for a tag").unwrap().as_utf8_str();
-
-
-                latest_news.push(JournalNew { title: String::from(h2.inner_text(inner_parser)), text: String::from(h3.inner_text(inner_parser)), link: Some(String::from(link))});
+                latest_news.push(JournalNew { title: String::from(h2.inner_text(parser)), text: String::from(h3.inner_text(parser)), link: Some(String::from(link))});
 
             });
 
@@ -81,30 +80,22 @@ pub async fn get_infobae() -> Vec<JournalNew> {
             let a_tags = get_elements("a.feed-list-card", &dom, parser);
 
             a_tags.iter().for_each(|node| {
-                let a_tag_html = node.inner_html(parser);
+                let node_tag = node.as_tag().unwrap();
 
-                let inner_dom = tl::parse(&a_tag_html, tl::ParserOptions::default()).unwrap();
-                let inner_parser = inner_dom.parser();
+                let title = query_node("h2.feed-list-card-headline-lean", node_tag, parser);
+                let text = query_node("div.deck", node_tag, parser);
 
-                let h2 = get_elements("h2.feed-list-card-headline-lean", &inner_dom, inner_parser);
-                let div = get_elements("div.deck", &inner_dom, inner_parser);
+                let link = get_attribute("href", node);
 
-                let title = h2.first().expect("h2 should exist inside a tag").inner_text(inner_parser);
-
-                if latest_news.iter().any(|journal_new| journal_new.title == title) {
+                if latest_news.iter().any(|journal_new| journal_new.link == Some(format!("http://infobae.com{}", link.clone()))) {
                     return
                 }
 
-                let mut journal_new = JournalNew {
-                    title: String::from(title),
-                    text: String::from(""),
-                    link: None
+                let journal_new = JournalNew {
+                    title: String::from(title.inner_text(parser)),
+                    text: String::from(text.inner_text(parser)),
+                    link: Some(format!("http://infobae.com{}", link))
                 };
-
-                if div.first().is_some() {
-                    let text = div.first().expect("div should exist inside a tag").inner_text(inner_parser);
-                    journal_new.text = String::from(text);
-                }
 
                 latest_news.push(journal_new)
             })
@@ -129,20 +120,20 @@ pub async fn get_lanacion() -> Vec<JournalNew> {
             let article_tags = get_elements("article.mod-article", &dom, parser);
 
             article_tags.iter().for_each(|node| {
-                let article_tag_html = node.inner_html(parser);
+                let node_tag = node.as_tag().unwrap();
 
-                let inner_dom = tl::parse(&article_tag_html, tl::ParserOptions::default()).unwrap();
-                let inner_parser = inner_dom.parser();
 
-                let a_tags = get_elements("a.com-link", &inner_dom, inner_parser);
+                let a_tag = query_node("a.com-link", node_tag, parser);
 
-                let title = a_tags.first().expect("a tag should exist inside article").inner_text(inner_parser);
+                let title = a_tag.inner_text(parser);
 
-                if latest_news.iter().any(|journal_new| journal_new.title == title) {
+                let link = get_attribute("href", &a_tag);
+
+                if latest_news.iter().any(|journal_new| journal_new.link == Some(format!("http://lanacion.com{}", link.clone()))) {
                     return
                 }
 
-                latest_news.push(JournalNew { title: String::from(title), text: String::from(""), link: None });
+                latest_news.push(JournalNew { title: String::from(title), text: String::from(""), link: Some(format!("http://lanacion.com{}", link)) });
             })
         },
         Err(error) => println!("{}", error)
@@ -162,16 +153,22 @@ pub async fn get_lacapital() -> Vec<JournalNew> {
             let dom = tl::parse(&response_html, tl::ParserOptions::default()).unwrap();
             let parser = dom.parser();
 
-            let h2_tags = get_elements("h2.entry-title", &dom, parser);
+            let articles = get_elements("article.ultimas-noticias-entry-container", &dom, parser);
 
-            h2_tags.iter().for_each(|node| {
-                let title = node.inner_text(parser);
+            articles.iter().for_each(|node| {
+                let node_tag = node.as_tag().expect("unable to convert node to tag");
 
-                if latest_news.iter().any(|journal_new| journal_new.title == title) {
+                let h2_node = query_node("h2.entry-title", node_tag, parser);
+                let a_node = query_node("a.cover-link", node_tag, parser);
+
+                let title = h2_node.inner_text(parser);
+                let link = get_attribute("href", &a_node);
+
+                if latest_news.iter().any(|journal_new| journal_new.link == Some(link.clone())) {
                     return
                 }
 
-                latest_news.push(JournalNew { title: String::from(title), text: String::from(""), link: None })
+                latest_news.push(JournalNew { title: String::from(title), text: String::from(""), link: Some(link) })
             })
         },
         Err(error) => println!("{}", error)
@@ -194,12 +191,11 @@ pub async fn get_rosario3() -> Vec<JournalNew> {
             let a_tags = get_elements("a.cover-link", &dom, parser);
 
             a_tags.iter().for_each(|node| {
+                let link = get_attribute("href", node);
+                let title = get_attribute("title", node);
 
-                let link = node.as_tag().expect("Failed to convert to HTML tag").attributes().get("href").expect("Failed to get href for a tag").unwrap().as_utf8_str();
-                let title = node.as_tag().expect("Failed to convert to HTML tag").attributes().get("title").expect("Failed to get title for a tag").unwrap().as_utf8_str();
 
-
-                if latest_news.iter().any(|journal_new| journal_new.title == title) {
+                if latest_news.iter().any(|journal_new| journal_new.link == Some(format!("http://rosario3.com{}", String::from(link.clone())))) {
                     return
                 }
 
