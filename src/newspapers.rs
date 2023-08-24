@@ -1,6 +1,6 @@
 use tl::{VDom, Node, Parser, HTMLTag};
 
-use crate::model::JournalNew;
+use crate::model::{JournalNew, Newspaper};
 
 fn get_elements<'a>(selector: &str, dom: &VDom<'a>, parser: &Parser<'a>) -> Vec<Node<'a>> {
     let selected = dom
@@ -54,7 +54,13 @@ pub async fn get_clarin() -> Vec<JournalNew> {
                     return
                 }
                 
-                latest_news.push(JournalNew { title: String::from(h2.inner_text(parser)), text: String::from(h3.inner_text(parser)), link: Some(String::from(link))});
+                latest_news.push(
+                    JournalNew { 
+                        title: String::from(h2.inner_text(parser)), 
+                        text: String::from(h3.inner_text(parser)), 
+                        link: Some(String::from(link)),
+                        newspaper: Newspaper::CLARIN
+                    });
 
             });
 
@@ -94,7 +100,8 @@ pub async fn get_infobae() -> Vec<JournalNew> {
                 let journal_new = JournalNew {
                     title: String::from(title.inner_text(parser)),
                     text: String::from(text.inner_text(parser)),
-                    link: Some(format!("http://infobae.com{}", link))
+                    link: Some(format!("http://infobae.com{}", link)),
+                    newspaper: Newspaper::INFOBAE
                 };
 
                 latest_news.push(journal_new)
@@ -133,7 +140,13 @@ pub async fn get_lanacion() -> Vec<JournalNew> {
                     return
                 }
 
-                latest_news.push(JournalNew { title: String::from(title), text: String::from(""), link: Some(format!("http://lanacion.com{}", link)) });
+                latest_news.push(
+                    JournalNew { 
+                        title: String::from(title), 
+                        text: String::from(""), 
+                        link: Some(format!("http://lanacion.com{}", link)),
+                        newspaper: Newspaper::LANACION
+                    });
             })
         },
         Err(error) => println!("{}", error)
@@ -168,7 +181,13 @@ pub async fn get_lacapital() -> Vec<JournalNew> {
                     return
                 }
 
-                latest_news.push(JournalNew { title: String::from(title), text: String::from(""), link: Some(link) })
+                latest_news.push(
+                    JournalNew { 
+                        title: String::from(title), 
+                        text: String::from(""), 
+                        link: Some(link),
+                        newspaper: Newspaper::LACAPITAL
+                    })
             })
         },
         Err(error) => println!("{}", error)
@@ -199,7 +218,13 @@ pub async fn get_rosario3() -> Vec<JournalNew> {
                     return
                 }
 
-                latest_news.push(JournalNew { title: String::from(title), text: String::from(""), link: Some(format!("http://rosario3.com{}", String::from(link))) })
+                latest_news.push(
+                    JournalNew { 
+                        title: String::from(title), 
+                        text: String::from(""), 
+                        link: Some(format!("http://rosario3.com{}", String::from(link))),
+                        newspaper: Newspaper::ROSARIO3 
+                    })
             })
         },
         Err(error) => println!("{}", error)
