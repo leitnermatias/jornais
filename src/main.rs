@@ -1,5 +1,5 @@
 use colored::Colorize;
-use jornais::{newspapers, model::{JournalNew, DBInfo}};
+use jornais::{newspapers, model::{JournalNew, DBInfo, Newspaper}};
 use tokio::{task, time};
 use std::{io::{self, Write}, time::Duration};
 use sqlx::{mysql::MySqlPoolOptions, Pool, MySql, Row};
@@ -72,11 +72,11 @@ async fn save_news_to_database(pool: &Pool<MySql>, news: JournalNew, newspaper_n
 
 }
 
-fn format_news_to_html(title: String, journal_news: Vec<JournalNew>) -> String {
+fn format_news_to_html(title: String, journal_news: Vec<JournalNew>, newspaper: Newspaper) -> String {
 
     let mut news_html = String::from(format!(r#"
-        <h1>{title}</h1>
-    "#));
+        <h1 class="{}-title">{title}</h1>
+    "#, newspaper));
 
     for news in journal_news {
         let formatted = format!(r#"
@@ -271,11 +271,11 @@ async fn main() {
 
                 
                 
-                let clarin_html = format_news_to_html(String::from("Clarin"), clarin_news);
-                let rosario3_html = format_news_to_html(String::from("Rosario3"), rosario3_news);
-                let infobae_html = format_news_to_html(String::from("Infobae"), infobae_news);
-                let lacapital_html = format_news_to_html(String::from("La Capital"), lacapital_news);
-                let lanacion_html = format_news_to_html(String::from("La Nacion"), lanacion_news);
+                let clarin_html = format_news_to_html(String::from("Clarin"), clarin_news, Newspaper::CLARIN);
+                let rosario3_html = format_news_to_html(String::from("Rosario3"), rosario3_news, Newspaper::ROSARIO3);
+                let infobae_html = format_news_to_html(String::from("Infobae"), infobae_news, Newspaper::INFOBAE);
+                let lacapital_html = format_news_to_html(String::from("La Capital"), lacapital_news, Newspaper::LACAPITAL);
+                let lanacion_html = format_news_to_html(String::from("La Nacion"), lanacion_news, Newspaper::LANACION);
 
                 let styles = r#"
                 <style>
@@ -339,6 +339,20 @@ async fn main() {
                         border-radius: 5px;
                         padding: 10px
                     }
+
+                    #toolbar {
+                        position: sticky;
+                        top: 0px;
+                        right: 0px;
+                        background-color: rgba(196, 188, 177, 0.288);
+                        margin-bottom: 10px;
+                        width: 100%;
+                        border-radius: 5px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-evenly;
+                        padding: 10px 0px;
+                    }
                     
                 </style>
                 "#;
@@ -393,6 +407,57 @@ async fn main() {
                         lanacionCounter.innerText = counters.lanacion.toString()
                         lacapitalCounter.innerText = counters.lacapital.toString()
 
+                        const rosario3Checkbox = $1(".rosario3-checkbox")
+                        const clarinCheckbox = $1(".clarin-checkbox")
+                        const infobaeCheckbox = $1(".infobae-checkbox")
+                        const lanacionCheckbox = $1(".lanacion-checkbox")
+                        const lacapitalCheckbox = $1(".lacapital-checkbox")
+
+                        rosario3Checkbox.addEventListener('click', () => {
+
+                            $(".news.rosario3").forEach(news => {
+                                news.style.display = rosario3Checkbox.checked ? 'block' : 'none'
+                            })
+
+                            $1(".rosario3-title").style.display = rosario3Checkbox.checked ? 'block' : 'none'
+                        })
+
+                        clarinCheckbox.addEventListener('click', () => {
+
+                            $(".news.clarin").forEach(news => {
+                                news.style.display = clarinCheckbox.checked ? 'block' : 'none'
+                            })
+
+                            $1(".clarin-title").style.display = clarinCheckbox.checked ? 'block' : 'none'
+                        })
+                        
+                        infobaeCheckbox.addEventListener('click', () => {
+
+                            $(".news.infobae").forEach(news => {
+                                news.style.display = infobaeCheckbox.checked ? 'block' : 'none'
+                            })
+
+                            $1(".infobae-title").style.display = infobaeCheckbox.checked ? 'block' : 'none'
+                        })
+
+                        lanacionCheckbox.addEventListener('click', () => {
+
+                            $(".news.lanacion").forEach(news => {
+                                news.style.display = lanacionCheckbox.checked ? 'block' : 'none'
+                            })
+
+                            $1(".lanacion-title").style.display = lanacionCheckbox.checked ? 'block' : 'none'
+                        })
+
+                        lacapitalCheckbox.addEventListener('click', () => {
+
+                            $(".news.lacapital").forEach(news => {
+                                news.style.display = lacapitalCheckbox.checked ? 'block' : 'none'
+                            })
+
+                            $1(".lacapital-title").style.display = lacapitalCheckbox.checked ? 'block' : 'none'
+                        })
+
                     }
 
 
@@ -410,6 +475,28 @@ async fn main() {
                     {script}
                 </head>
                 <body>
+                    <div id="toolbar">
+                        <div>
+                            <input checked class="rosario3-checkbox" type="checkbox">
+                            <span>Rosario3</span>
+                        </div>
+                        <div>
+                            <input checked class="clarin-checkbox" type="checkbox">
+                            <span>Clarin</span>
+                        </div>
+                        <div>
+                            <input checked class="infobae-checkbox" type="checkbox">
+                            <span>Infobae</span>
+                        </div>
+                        <div>
+                            <input checked class="lanacion-checkbox" type="checkbox">
+                            <span>La Nacion</span>
+                        </div>
+                        <div>
+                            <input checked class="lacapital-checkbox" type="checkbox">
+                            <span>La Capital</span>
+                        </div>
+                    </div>
                     <div id="counters">
                         <span>Rosario3: <span class="rosario3Counter">0</span> noticias</span>-
                         <span>Clarin: <span class="clarinCounter">0</span> noticias</span>-
